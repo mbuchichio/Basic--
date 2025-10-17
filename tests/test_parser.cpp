@@ -46,4 +46,47 @@ BASICPP_TEST(ParserRejectsMissingModuleKeyword) {
     }
 }
 
+BASICPP_TEST(ParserParsesImportList) {
+    const std::string source = "module App\nimport Basicpp.Command\nimport System.Timer\n";
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (!module) {
+        throw std::runtime_error("parser failed");
+    }
+
+    const auto& imports = module.value().imports;
+    if (imports.size() != 2) {
+        throw std::runtime_error("unexpected import count");
+    }
+
+    if (imports[0].path != "Basicpp.Command") {
+        throw std::runtime_error("unexpected first import path");
+    }
+
+    if (imports[1].path != "System.Timer") {
+        throw std::runtime_error("unexpected second import path");
+    }
+}
+
+BASICPP_TEST(ParserRejectsBrokenImport) {
+    const std::string source = "module App\nimport\n";
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (module) {
+        throw std::runtime_error("parser should have failed");
+    }
+
+    if (module.error() != "expected identifier after 'import'") {
+        throw std::runtime_error("unexpected parser error message");
+    }
+}
+
 BASICPP_TEST_MAIN()

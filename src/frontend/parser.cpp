@@ -32,7 +32,15 @@ public:
 
         module.name = name_token.value().lexeme;
 
-        // Future work: parse imports and declarations. For now we accept the remainder.
+        while (match(token_kind::keyword_import)) {
+            auto import = parse_import_path();
+            if (!import) {
+                return core::result<ast::module_decl, std::string>::err(import.error());
+            }
+            module.imports.push_back(std::move(import.value()));
+        }
+
+        // Future work: parse declarations following imports.
 
         return core::result<ast::module_decl, std::string>::ok(std::move(module));
     }
@@ -78,6 +86,27 @@ private:
         error += current().lexeme;
         error += "'";
         return core::result<token, std::string>::err(std::move(error));
+    }
+
+    core::result<ast::import_decl, std::string> parse_import_path() {
+        auto first = consume(token_kind::identifier, "expected identifier after 'import'");
+        if (!first) {
+            return core::result<ast::import_decl, std::string>::err("expected identifier after 'import'");
+        }
+
+        std::string path = first.value().lexeme;
+
+        while (match(token_kind::dot)) {
+            auto segment = consume(token_kind::identifier, "expected identifier after '.' in import path");
+            if (!segment) {
+                return core::result<ast::import_decl, std::string>::err("expected identifier after '.' in import path");
+            }
+            path.push_back('.');
+            path += segment.value().lexeme;
+        }
+
+        ast::import_decl import{std::move(path)};
+        return core::result<ast::import_decl, std::string>::ok(std::move(import));
     }
 
     const std::vector<token>& tokens_;
