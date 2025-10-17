@@ -73,6 +73,7 @@ Sugerencia actual: **submódulo**; cuando el transpiler esté estable, empaqueta
 ### Sprint C — transpiler MVP (2–3 días)
 
 - [x] Definir conjunto de tokens y stub del lexer (`token.hpp`, `lexer.hpp`/`.cpp`).
+- [x] Agregar tests de lexer que cubran tokens clave y errores comunes.
 - [ ] Definir gramática básica (`docs/OVERVIEW.md` ⇄ parser).
 - [ ] Implementar lexer + parser + AST en `src/`.
 - [ ] Generar C++ para subset (const, command, state, function).
