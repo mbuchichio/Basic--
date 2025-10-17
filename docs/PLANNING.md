@@ -7,14 +7,14 @@ Crear **repo independiente** `basicpp` (este repositorio) que aloja:
 - El **runtime header-only** consumido por el código generado.
 - El futuro **toolchain del lenguaje Basic++** (`bppc` transpiler, pruebas y docs).
 
-Armador y otros hosts consumirán la librería como dependencia; el usuario final trabaja en `.bpp` sin tocar C++.
+Cualquier aplicación host consumirá la librería como dependencia; el usuario final trabaja en `.bpp` sin tocar C++.
 
 ## Objetivos del split inicial
 
 - **Aislar contratos genéricos** compartidos por el código generado (Command, StateMachine, History, Result, EventBus, DI, etc.).
-- **Cero dependencias** de Armador/Win32/D2D: solo estándar C++.
+- **Cero dependencias** de plataformas específicas (Win32/D2D, etc.): solo estándar C++.
 - **SemVer propio** y **tests dedicados** para el runtime.
-- Integración sencilla en Armador (submódulo o paquete); evolución del lenguaje en repositorio separado.
+- Integración sencilla en proyectos anfitriones (submódulo o paquete); evolución del lenguaje en repositorio separado.
 
 ## Layout del repo
 
@@ -33,7 +33,7 @@ basicpp/
   LICENSE, README.md, CHANGELOG.md
 ```
 
-## Integración en Armador (elige 1)
+## Consumo de la librería runtime (elige 1)
 
 1. **Submódulo Git**
    - `git submodule add https://…/basicpp extern/basicpp`
@@ -57,27 +57,37 @@ Sugerencia actual: **submódulo**; cuando el transpiler esté estable, empaqueta
 
 ### Sprint A — bootstrap runtime & CI (½–1 día)
 
-- Crear repo, layout, LICENSE MIT, README con visión del lenguaje.
-- Implementar `core::result`, `command::registry`, `state::state_machine` (stubs funcionales).
-- Tests mínimos que pasen en CI (GitHub Actions matrix {Win, Linux}).
-- Documento `docs/OVERVIEW.md` describiendo la sintaxis inicial.
+- [x] Crear repo, layout, LICENSE MIT, README con visión del lenguaje.
+- [x] Implementar `core::result`, `command::registry`, `state::state_machine` (stubs funcionales).
+- [x] Tests mínimos que pasen en CI (GitHub Actions matrix {Win, Linux}).
+- [x] Documento `docs/OVERVIEW.md` describiendo la sintaxis inicial.
+- [x] Añadir CLI inicial `bppc` con comandos declarados (transpile/build/version).
+- [x] Documentar pasos siguientes en README/PLANNING.
 
-### Sprint B — adopción en Armador (1–2 días)
+### Sprint B — adopción en proyectos anfitriones (1–2 días)
 
-- Reemplazar `CommandRegistry` y `StateMachine` internos por `basicpp` (adaptadores finos).
-- Mantener `History` actual; portar `Coalescer` a `basicpp::history` si es simple.
-- `make test-all` verde. Etiquetar release `v0.1.0` y sincronizar submódulo.
+- [ ] Reemplazar implementaciones internas (`CommandRegistry`, `StateMachine`, etc.) por `basicpp` (adaptadores finos).
+- [ ] Mantener `History` actual; portar `Coalescer` a `basicpp::history` si es simple.
+- [ ] `make test-all` verde. Etiquetar release `v0.1.0` y sincronizar submódulo o paquete.
 
 ### Sprint C — transpiler MVP (2–3 días)
 
-- Definir gramática básica (`docs/OVERVIEW.md` ⇄ parser).
-- Implementar lexer + parser + AST en `src/`.
-- Generar C++ para subset (const, command, state, function).
-- CLI `bppc` que reciba `.bpp` y escupa `.cpp` + dependa de runtime.
+- [x] Definir conjunto de tokens y stub del lexer (`token.hpp`, `lexer.hpp`/`.cpp`).
+- [ ] Definir gramática básica (`docs/OVERVIEW.md` ⇄ parser).
+- [ ] Implementar lexer + parser + AST en `src/`.
+- [ ] Generar C++ para subset (const, command, state, function).
+- [ ] CLI `bppc` que reciba `.bpp` y escupa `.cpp` + dependa de runtime.
+
+### Sprint D — experiencia standalone (2–3 días)
+
+- [ ] Extender `bppc` con subcomando `build` que ejecute todo el pipeline (bpp → C++ → compilador → artefacto).
+- [ ] Autodetectar toolchains comunes (MSVC, clang, gcc) y exponer flags simplificados (`--target wasm`, `--target native`).
+- [ ] Empaquetar runtime + CLI en releases binarios por plataforma.
+- [ ] Añadir plantillas de proyecto (`bppc init console`, `bppc init gui`) con CMake preconfigurado para usuarios avanzados.
 
 ## CI y versionado
 
-- **SemVer**: `v0.1.0` al integrar en Armador.
+- **SemVer**: `v0.1.0` al integrar en el primer proyecto anfitrión.
 - CI: Windows + Linux, `-Werror` para headers y ejecución de tests.
 - Publicar artefactos (zip header-only, binarios `bppc`) cuando el transpiler esté listo.
 
@@ -90,7 +100,7 @@ Sugerencia actual: **submódulo**; cuando el transpiler esté estable, empaqueta
 
 ## Riesgos y mitigaciones
 
-- **Drift** entre Armador y Basic++ → tests de integración en Armador usando tags de `basicpp`. Mantener archivo `extern/basicpp.version`.
+- **Drift** entre proyectos anfitriones y Basic++ → tests de integración aguas abajo usando tags de `basicpp`. Mantener archivo `extern/basicpp.version`.
 - **Sobregeneralizar** → Mantener scope acotado; sólo patrones probados.
 - **Gestión de dependencias** → Runtime header-only; transpiler se entrega como binario o paquete.
 - **Compilación C++ generada** → Validar output contra compiladores targets (MSVC, clang, gcc, Emscripten) en CI antes de releases.

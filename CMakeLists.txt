@@ -24,3 +24,5 @@ if(BASICPP_ENABLE_TESTS)
         add_test(NAME ${test_name} COMMAND ${test_name})
     endforeach()
 endif()
+
+add_subdirectory(src/cli)

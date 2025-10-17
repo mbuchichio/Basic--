@@ -11,15 +11,14 @@ Think "Xojo, but generating idiomatic C++"—the goal is to ship portable artefa
 
 ## Current status
 
-- Bootstrap of the runtime layer (`basicpp::core`, `basicpp::command`, `basicpp::state`, `basicpp::history`, `basicpp::testing`).
-- Minimal self-test harness and smoke tests to keep behaviour stable while the language front-end evolves.
-- CMake build configured for header-only consumption and test execution.
+- GitHub Actions ejecuta `cmake` + `ctest` en Ubuntu y Windows en cada push/PR.
 
 Work in progress:
 
 1. Parser and AST for `.bpp` syntax.
 2. Code generator that lowers AST nodes into the runtime primitives.
 3. CLI transpiler pipeline (bpp → C++ → chosen compiler → binary/Wasm).
+4. Standalone build tooling so users can produce `.exe`/`.dll` artefacts without touching raw C++ toolchains manually.
 
 ## Building the runtime tests
 
@@ -31,6 +30,12 @@ ctest --test-dir build
 
 Adjust `CMAKE_CXX_STANDARD` if you need a newer language level; the default is C++20.
 
+On Windows with MinGW installed, you can run the bundled helper instead:
+
+```bat
+make.bat
+```
+
 ## Embedding the runtime in other projects
 
 Until the transpiler emits artefacts automatically, you can consume the runtime library directly:
@@ -41,6 +46,17 @@ target_link_libraries(my_target PRIVATE basicpp)
 ```
 
 Because the runtime is header-only, vendoring the `include/basicpp` directory is also an option for experimental builds.
+
+## Standalone usage (planned)
+
+The long-term experience for Basic++ is:
+
+- Ship a cross-platform CLI (`bppc`) that bundles a minimal C++ toolchain or auto-discovers system compilers.
+- Allow `bppc build game.bpp` to transpile, compile, and emit native executables or shared libraries in a single step.
+- Provide templates (`bppc init console`, `bppc init wasm`) with sensible defaults so projects start compiling out-of-the-box.
+- Offer prebuilt binaries of the CLI with embedded runtime headers, so users can adopt the language without cloning this repository.
+
+Until that tooling is ready, the runtime and docs here help explore the language design while the standalone workflow takes shape.
 
 ## License
 
