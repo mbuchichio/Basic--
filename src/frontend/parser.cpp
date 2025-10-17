@@ -391,7 +391,8 @@ private:
     }
 
     core::result<ast::literal, std::string> parse_literal() {
-        if (peek(token_kind::string_literal) || peek(token_kind::integer_literal) || peek(token_kind::float_literal)) {
+        if (peek(token_kind::string_literal) || peek(token_kind::integer_literal) || peek(token_kind::float_literal) ||
+            peek(token_kind::keyword_true) || peek(token_kind::keyword_false)) {
             token tok = current();
             advance();
             return core::result<ast::literal, std::string>::ok(ast::literal{tok.kind, tok.lexeme});

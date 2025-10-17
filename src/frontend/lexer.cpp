@@ -66,6 +66,8 @@ std::optional<token_kind> keyword_lookup(std::string_view lexeme) {
         {"on", token_kind::keyword_on},
         {"function", token_kind::keyword_function},
     {"as", token_kind::keyword_as},
+    {"true", token_kind::keyword_true},
+    {"false", token_kind::keyword_false},
         {"end", token_kind::keyword_end},
         {"if", token_kind::keyword_if},
         {"then", token_kind::keyword_then},

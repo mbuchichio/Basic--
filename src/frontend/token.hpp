@@ -20,6 +20,8 @@ enum class token_kind {
     keyword_on,
     keyword_function,
     keyword_as,
+    keyword_true,
+    keyword_false,
     keyword_end,
     keyword_if,
     keyword_then,
@@ -81,6 +83,8 @@ inline std::string_view to_string(token_kind kind) {
     case token_kind::keyword_on: return "on";
     case token_kind::keyword_function: return "function";
     case token_kind::keyword_as: return "as";
+    case token_kind::keyword_true: return "true";
+    case token_kind::keyword_false: return "false";
     case token_kind::keyword_end: return "end";
     case token_kind::keyword_if: return "if";
     case token_kind::keyword_then: return "then";

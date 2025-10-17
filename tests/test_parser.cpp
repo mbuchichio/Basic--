@@ -61,6 +61,32 @@ BASICPP_TEST(ParserParsesConstLiteral) {
     }
 }
 
+BASICPP_TEST(ParserParsesConstBoolean) {
+    const std::string source = "module App\nconst Enabled = true\n";
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (!module) {
+        throw std::runtime_error("parser failed");
+    }
+
+    const auto& constants = module.value().constants;
+    if (constants.size() != 1) {
+        throw std::runtime_error("unexpected constant count");
+    }
+
+    if (constants[0].value.kind != token_kind::keyword_true) {
+        throw std::runtime_error("unexpected boolean literal kind");
+    }
+
+    if (constants[0].value.lexeme != "true") {
+        throw std::runtime_error("unexpected boolean literal value");
+    }
+}
+
 BASICPP_TEST(ParserRejectsConstMissingLiteral) {
     const std::string source = "module App\nconst Version = \n";
     auto tokens = lexer::tokenize(source);
