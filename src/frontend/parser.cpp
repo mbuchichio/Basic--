@@ -72,10 +72,20 @@ public:
                 continue;
             }
 
+            if (peek(token_kind::keyword_function)) {
+                advance();
+                auto function = parse_function_decl();
+                if (!function) {
+                    return core::result<ast::module_decl, std::string>::err(function.error());
+                }
+                module.functions.push_back(std::move(function.value()));
+                continue;
+            }
+
             return core::result<ast::module_decl, std::string>::err(unexpected_token_message());
         }
 
-        // Future work: parse additional declarations following commands.
+        // Future work: parse additional declarations.
 
         return core::result<ast::module_decl, std::string>::ok(std::move(module));
     }
@@ -194,7 +204,7 @@ private:
             return core::result<ast::command_decl, std::string>::err(close_paren.error());
         }
 
-        auto body = parse_command_body();
+    auto body = parse_block_body(token_kind::keyword_command, "command", "expected 'command' after 'end'");
         if (!body) {
             return core::result<ast::command_decl, std::string>::err(body.error());
         }
@@ -204,6 +214,49 @@ private:
         decl.parameters = std::move(parameters.value());
         decl.body_tokens = std::move(body.value());
         return core::result<ast::command_decl, std::string>::ok(std::move(decl));
+    }
+
+    core::result<ast::function_decl, std::string> parse_function_decl() {
+        auto name_token = consume(token_kind::identifier, "expected function name");
+        if (!name_token) {
+            return core::result<ast::function_decl, std::string>::err(name_token.error());
+        }
+
+        auto open_paren = consume(token_kind::l_paren, "expected '(' after function name");
+        if (!open_paren) {
+            return core::result<ast::function_decl, std::string>::err(open_paren.error());
+        }
+
+        auto parameters = parse_parameter_list();
+        if (!parameters) {
+            return core::result<ast::function_decl, std::string>::err(parameters.error());
+        }
+
+        auto close_paren = consume(token_kind::r_paren, "expected ')' after function parameters");
+        if (!close_paren) {
+            return core::result<ast::function_decl, std::string>::err(close_paren.error());
+        }
+
+        std::optional<std::string> return_type;
+        if (match(token_kind::keyword_as)) {
+            auto type = parse_type_spec();
+            if (!type) {
+                return core::result<ast::function_decl, std::string>::err(type.error());
+            }
+            return_type = std::move(type.value());
+        }
+
+    auto body = parse_block_body(token_kind::keyword_function, "function", "expected 'function' after 'end'");
+        if (!body) {
+            return core::result<ast::function_decl, std::string>::err(body.error());
+        }
+
+        ast::function_decl decl{};
+        decl.name = name_token.value().lexeme;
+        decl.parameters = std::move(parameters.value());
+        decl.return_type = std::move(return_type);
+        decl.body_tokens = std::move(body.value());
+        return core::result<ast::function_decl, std::string>::ok(std::move(decl));
     }
 
     core::result<ast::state_decl, std::string> parse_state_decl() {
@@ -285,11 +338,32 @@ private:
         return core::result<std::vector<std::string>, std::string>::ok(std::move(parameters));
     }
 
-    core::result<std::vector<token>, std::string> parse_command_body() {
+    core::result<std::string, std::string> parse_type_spec() {
+        auto first = consume(token_kind::identifier, "expected type name after 'as'");
+        if (!first) {
+            return core::result<std::string, std::string>::err(first.error());
+        }
+
+        std::string name = first.value().lexeme;
+
+        while (match(token_kind::dot)) {
+            auto segment = consume(token_kind::identifier, "expected identifier after '.' in type name");
+            if (!segment) {
+                return core::result<std::string, std::string>::err(segment.error());
+            }
+            name.push_back('.');
+            name += segment.value().lexeme;
+        }
+
+        return core::result<std::string, std::string>::ok(std::move(name));
+    }
+
+    core::result<std::vector<token>, std::string> parse_block_body(token_kind closing_keyword, const char* block_name,
+                                                                  const char* closing_keyword_message) {
         std::vector<token> body;
 
         while (!is_at_end()) {
-            if (peek(token_kind::keyword_end) && peek_next(token_kind::keyword_command)) {
+            if (peek(token_kind::keyword_end) && peek_next(closing_keyword)) {
                 break;
             }
             body.push_back(current());
@@ -297,17 +371,20 @@ private:
         }
 
         if (is_at_end()) {
-            return core::result<std::vector<token>, std::string>::err("expected 'end command' before end of input");
+            std::string message = "expected 'end ";
+            message += block_name;
+            message += "' before end of input";
+            return core::result<std::vector<token>, std::string>::err(std::move(message));
         }
 
-        auto end_token = consume(token_kind::keyword_end, "expected 'end' to close command");
+        auto end_token = consume(token_kind::keyword_end, "expected 'end' to close block");
         if (!end_token) {
             return core::result<std::vector<token>, std::string>::err(end_token.error());
         }
 
-        auto command_token = consume(token_kind::keyword_command, "expected 'command' after 'end'");
-        if (!command_token) {
-            return core::result<std::vector<token>, std::string>::err(command_token.error());
+        auto keyword_token = consume(closing_keyword, closing_keyword_message);
+        if (!keyword_token) {
+            return core::result<std::vector<token>, std::string>::err(keyword_token.error());
         }
 
         return core::result<std::vector<token>, std::string>::ok(std::move(body));

@@ -202,6 +202,70 @@ BASICPP_TEST(ParserRejectsCommandWithoutEnd) {
     }
 }
 
+BASICPP_TEST(ParserParsesFunctionWithReturnType) {
+    const std::string source =
+        "module App\n"
+        "function Main(argv) as Result.App\n"
+        "return\n"
+        "end function\n";
+
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (!module) {
+        throw std::runtime_error("parser failed");
+    }
+
+    const auto& functions = module.value().functions;
+    if (functions.size() != 1) {
+        throw std::runtime_error("unexpected function count");
+    }
+
+    if (functions[0].name != "Main") {
+        throw std::runtime_error("unexpected function name");
+    }
+
+    if (!functions[0].return_type || functions[0].return_type.value() != "Result.App") {
+        throw std::runtime_error("unexpected return type");
+    }
+
+    if (functions[0].parameters.size() != 1 || functions[0].parameters[0] != "argv") {
+        throw std::runtime_error("unexpected function parameters");
+    }
+
+    if (functions[0].body_tokens.empty()) {
+        throw std::runtime_error("expected function body tokens");
+    }
+
+    if (functions[0].body_tokens.front().kind != token_kind::keyword_return) {
+        throw std::runtime_error("unexpected first function body token");
+    }
+}
+
+BASICPP_TEST(ParserRejectsFunctionWithoutEnd) {
+    const std::string source =
+        "module App\n"
+        "function Main()\n"
+        "return\n";
+
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (module) {
+        throw std::runtime_error("parser should have failed");
+    }
+
+    if (module.error() != "expected 'end function' before end of input") {
+        throw std::runtime_error("unexpected parser error message");
+    }
+}
+
 BASICPP_TEST(ParserRejectsMissingModuleKeyword) {
     const std::string source = "function Main()\nend function\n";
     auto tokens = lexer::tokenize(source);

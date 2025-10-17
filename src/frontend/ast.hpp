@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -34,6 +35,13 @@ struct command_decl {
     std::vector<token> body_tokens;
 };
 
+struct function_decl {
+    std::string name;
+    std::vector<std::string> parameters;
+    std::optional<std::string> return_type;
+    std::vector<token> body_tokens;
+};
+
 struct import_decl {
     std::string path;
 };
@@ -44,6 +52,7 @@ struct module_decl {
     std::vector<const_decl> constants;
     std::vector<state_decl> states;
     std::vector<command_decl> commands;
+    std::vector<function_decl> functions;
 };
 
 } // namespace basicpp::frontend::ast

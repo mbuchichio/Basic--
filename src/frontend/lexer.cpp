@@ -65,6 +65,7 @@ std::optional<token_kind> keyword_lookup(std::string_view lexeme) {
         {"state", token_kind::keyword_state},
         {"on", token_kind::keyword_on},
         {"function", token_kind::keyword_function},
+    {"as", token_kind::keyword_as},
         {"end", token_kind::keyword_end},
         {"if", token_kind::keyword_if},
         {"then", token_kind::keyword_then},
@@ -175,7 +176,10 @@ core::result<std::vector<token>, std::string> lexer::tokenize(std::string_view s
             add_simple_token(token_kind::ampersand, token_start_index, token_start_line, token_start_column);
             break;
         case '=':
-            if (cur.match('=')) {
+            if (cur.match('>')) {
+                std::string lexeme(source.substr(token_start_index, cur.index - token_start_index));
+                tokens.push_back(make_token(token_kind::arrow, std::move(lexeme), token_start_line, token_start_column));
+            } else if (cur.match('=')) {
                 std::string lexeme(source.substr(token_start_index, cur.index - token_start_index));
                 tokens.push_back(make_token(token_kind::equals, std::move(lexeme), token_start_line, token_start_column));
             } else {
