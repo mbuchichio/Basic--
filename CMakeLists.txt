@@ -20,14 +20,17 @@ add_library(basicpp_frontend STATIC
 )
 target_compile_features(basicpp_frontend PUBLIC cxx_std_20)
 target_link_libraries(basicpp_frontend PUBLIC basicpp)
-target_include_directories(basicpp_frontend PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/src)
+target_include_directories(basicpp_frontend PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}/src
+    ${CMAKE_CURRENT_SOURCE_DIR}/include
+)
 
 if(BASICPP_ENABLE_TESTS)
     enable_testing()
     file(GLOB BASICPP_TEST_SOURCES CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/tests/*.cpp")
     foreach(test_src ${BASICPP_TEST_SOURCES})
         get_filename_component(test_name ${test_src} NAME_WE)
-    add_executable(${test_name} ${test_src})
+        add_executable(${test_name} ${test_src})
         target_link_libraries(${test_name} PRIVATE basicpp_frontend basicpp)
         target_include_directories(${test_name} PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
         add_test(NAME ${test_name} COMMAND ${test_name})
