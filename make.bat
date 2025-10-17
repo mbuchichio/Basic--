@@ -5,7 +5,7 @@ set BUILD_DIR=build
 set GENERATOR=MinGW Makefiles
 
 if not exist "%BUILD_DIR%" (
-	echo Configurando proyecto - generador: %GENERATOR%...
+	echo Configuring project with generator %GENERATOR%...
 	cmake -S . -B "%BUILD_DIR%" -G "%GENERATOR%"
 	if errorlevel 1 exit /b %errorlevel%
 )

@@ -1,107 +1,107 @@
-# Roadmap Snapshot — 2025-10-17
+# Roadmap Snapshot - 2025-10-17
 
-## Decisión
+## Decision
 
-Crear **repo independiente** `basicpp` (este repositorio) que aloja:
+Create an independent repository named `basicpp` (this repo) that contains:
 
-- El **runtime header-only** consumido por el código generado.
-- El futuro **toolchain del lenguaje Basic++** (`bppc` transpiler, pruebas y docs).
+- The header-only runtime consumed by generated code.
+- The future Basic++ toolchain (`bppc` transpiler, tests, documentation).
 
-Cualquier aplicación host consumirá la librería como dependencia; el usuario final trabaja en `.bpp` sin tocar C++.
+Any host application consumes the runtime as a dependency; end users write `.bpp` without ever touching C++.
 
-## Objetivos del split inicial
+## Initial split goals
 
-- **Aislar contratos genéricos** compartidos por el código generado (Command, StateMachine, History, Result, EventBus, DI, etc.).
-- **Cero dependencias** de plataformas específicas (Win32/D2D, etc.): solo estándar C++.
-- **SemVer propio** y **tests dedicados** para el runtime.
-- Integración sencilla en proyectos anfitriones (submódulo o paquete); evolución del lenguaje en repositorio separado.
+- Isolate the generic contracts used by generated code (command, state machine, history, result, event bus, DI, etc.).
+- Avoid host-specific dependencies (Win32, D2D, ...); stick to the C++ standard library.
+- Give the runtime its own SemVer cadence and dedicated tests.
+- Keep host integration simple (submodule or package) while the language evolves separately.
 
-## Layout del repo
+## Repository layout
 
 ```
 basicpp/
-  include/basicpp/            # headers públicos (runtime)
+  include/basicpp/            # public runtime headers
     core/{result.hpp,event.hpp,service_provider.hpp,clock.hpp,logger.hpp}
     command/{command.hpp,registry.hpp,shortcut_map.hpp}
     state/{state_machine.hpp,state.hpp,transition.hpp}
     history/{delta.hpp,history.hpp,coalescer.hpp,snapshot_fallback.hpp}
     testing/{selftest.hpp,test_registry.hpp}
-  src/                        # transpiler CLI y utilidades auxiliares
-  tests/                      # unit tests runtime + integration tests transpiler
-  docs/                       # contratos, overview del lenguaje, roadmap
-  tools/                      # scripts de build/transpilado (por definir)
+  src/                        # transpiler CLI and supporting utilities
+  tests/                      # runtime unit tests + transpiler integration tests
+  docs/                       # contracts, language overview, roadmap
+  tools/                      # build/transpilation scripts (to be defined)
   LICENSE, README.md, CHANGELOG.md
 ```
 
-## Consumo de la librería runtime (elige 1)
+## Consuming the runtime library (choose one)
 
-1. **Submódulo Git**
-   - `git submodule add https://…/basicpp extern/basicpp`
-   - Pros: actualizable; Contras: gestión de submódulos.
-2. **Vendoring (copiado)**
-   - Copiar `/include/basicpp` a `extern/basicpp/include` (con script).
-   - Pros: simple; Contras: actualizar manual/script.
-3. **Paquete (CMake/CPM/vcpkg)** *(más adelante)*
-   - Pros: clean; Contras: setup inicial.
+1. **Git submodule**
+   - `git submodule add https://.../basicpp extern/basicpp`
+   - Pros: easy to update. Cons: submodule management overhead.
+2. **Vendoring (copying)**
+   - Copy `/include/basicpp` into `extern/basicpp/include` (ideally via script).
+   - Pros: simple. Cons: manual or scripted updates.
+3. **Package (CMake/CPM/vcpkg)** *(future)*
+   - Pros: clean consumption. Cons: initial setup effort.
 
-Sugerencia actual: **submódulo**; cuando el transpiler esté estable, empaquetar.
+Current recommendation: start with a submodule; publish a package once the transpiler stabilises.
 
-## Guardrails de diseño
+## Design guardrails
 
-- Namespace **`basicpp::`**; sin `using` globales en headers.
-- Solo C++20 estándar; comenzar **header-only** para reducir fricción.
-- Definir interfaces (`ILogger`, `IClock`) y delegar implementaciones al host.
-- **Sin tipos de dominio** (Document, Snap, etc.).
+- Keep everything under the `basicpp::` namespace; avoid global `using` in headers.
+- Target standard C++20; begin life as header-only to reduce friction.
+- Define interfaces (for example `ILogger`, `IClock`) and let hosts provide implementations.
+- Do not include domain-specific types (Document, Snap, etc.).
 
-## Plan de migración (dos sprints cortos)
+## Delivery plan (short sprints)
 
-### Sprint A — bootstrap runtime & CI (½–1 día)
+### Sprint A - runtime bootstrap and CI (0.5-1 day)
 
-- [x] Crear repo, layout, LICENSE MIT, README con visión del lenguaje.
-- [x] Implementar `core::result`, `command::registry`, `state::state_machine` (stubs funcionales).
-- [x] Tests mínimos que pasen en CI (GitHub Actions matrix {Win, Linux}).
-- [x] Documento `docs/OVERVIEW.md` describiendo la sintaxis inicial.
-- [x] Añadir CLI inicial `bppc` con comandos declarados (transpile/build/version).
-- [x] Documentar pasos siguientes en README/PLANNING.
+- [x] Create repo, layout, MIT license, README describing the language vision.
+- [x] Implement `core::result`, `command::registry`, `state::state_machine` (functional stubs).
+- [x] Set up minimum CI (GitHub Actions matrix Windows/Linux running tests).
+- [x] Write `docs/OVERVIEW.md` with the initial syntax.
+- [x] Add the initial `bppc` CLI stub with declared commands (transpile/build/version).
+- [x] Capture follow-up steps in README and this planning file.
 
-### Sprint B — adopción en proyectos anfitriones (1–2 días)
+### Sprint B - host adoption (1-2 days)
 
-- [ ] Reemplazar implementaciones internas (`CommandRegistry`, `StateMachine`, etc.) por `basicpp` (adaptadores finos).
-- [ ] Mantener `History` actual; portar `Coalescer` a `basicpp::history` si es simple.
-- [ ] `make test-all` verde. Etiquetar release `v0.1.0` y sincronizar submódulo o paquete.
+- [ ] Replace host-side implementations (`CommandRegistry`, `StateMachine`, etc.) with `basicpp` adapters.
+- [ ] Keep the current history component; move `Coalescer` into `basicpp::history` when practical.
+- [ ] Ensure `make test-all` (or equivalent) stays green. Tag `v0.1.0` and sync the chosen consumption method.
 
-### Sprint C — transpiler MVP (2–3 días)
+### Sprint C - transpiler MVP (2-3 days)
 
-- [x] Definir conjunto de tokens y stub del lexer (`token.hpp`, `lexer.hpp`/`.cpp`).
-- [x] Agregar tests de lexer que cubran tokens clave y errores comunes.
-- [ ] Definir gramática básica (`docs/OVERVIEW.md` ⇄ parser).
-- [ ] Implementar lexer + parser + AST en `src/`.
-- [ ] Generar C++ para subset (const, command, state, function).
-- [ ] CLI `bppc` que reciba `.bpp` y escupa `.cpp` + dependa de runtime.
+- [x] Define the token set and lexer stub (`token.hpp`, `lexer.hpp`/`.cpp`).
+- [x] Add lexer tests covering key tokens and common failure modes.
+- [ ] Define the basic grammar (`docs/OVERVIEW.md` <-> parser).
+- [ ] Implement lexer integration, parser, and AST under `src/`.
+- [ ] Generate C++ for the initial subset (const, command, state, function).
+- [ ] Extend `bppc` so it accepts `.bpp` and emits `.cpp` alongside the runtime.
 
-### Sprint D — experiencia standalone (2–3 días)
+### Sprint D - standalone experience (2-3 days)
 
-- [ ] Extender `bppc` con subcomando `build` que ejecute todo el pipeline (bpp → C++ → compilador → artefacto).
-- [ ] Autodetectar toolchains comunes (MSVC, clang, gcc) y exponer flags simplificados (`--target wasm`, `--target native`).
-- [ ] Empaquetar runtime + CLI en releases binarios por plataforma.
-- [ ] Añadir plantillas de proyecto (`bppc init console`, `bppc init gui`) con CMake preconfigurado para usuarios avanzados.
+- [ ] Extend `bppc` with a `build` subcommand that runs the full pipeline (bpp -> C++ -> compiler -> artefact).
+- [ ] Autodetect common toolchains (MSVC, clang, gcc) and surface simplified flags (`--target wasm`, `--target native`).
+- [ ] Package runtime + CLI into platform-specific releases.
+- [ ] Ship project templates (`bppc init console`, `bppc init gui`) with preconfigured CMake for advanced users.
 
-## CI y versionado
+## CI and versioning
 
-- **SemVer**: `v0.1.0` al integrar en el primer proyecto anfitrión.
-- CI: Windows + Linux, `-Werror` para headers y ejecución de tests.
-- Publicar artefactos (zip header-only, binarios `bppc`) cuando el transpiler esté listo.
+- Target SemVer `v0.1.0` once the first host integrates the runtime.
+- Continuous integration: Windows + Linux with warnings treated as errors for headers and full test execution.
+- Publish artefacts (header-only zip, `bppc` binaries) once the transpiler is ready.
 
-## Documentación mínima
+## Minimum documentation set
 
-- `README.md`: visión del lenguaje y runtime.
-- `docs/OVERVIEW.md`: sintaxis y pipeline de compilación.
-- `docs/CONTRACTS.md`: garantías de las interfaces runtime.
-- `docs/PLANNING.md`: roadmap vivo (este archivo).
+- `README.md`: language and runtime vision.
+- `docs/OVERVIEW.md`: syntax outline and compilation pipeline.
+- `docs/CONTRACTS.md`: runtime interface guarantees.
+- `docs/PLANNING.md`: living roadmap (this file).
 
-## Riesgos y mitigaciones
+## Risks and mitigations
 
-- **Drift** entre proyectos anfitriones y Basic++ → tests de integración aguas abajo usando tags de `basicpp`. Mantener archivo `extern/basicpp.version`.
-- **Sobregeneralizar** → Mantener scope acotado; sólo patrones probados.
-- **Gestión de dependencias** → Runtime header-only; transpiler se entrega como binario o paquete.
-- **Compilación C++ generada** → Validar output contra compiladores targets (MSVC, clang, gcc, Emscripten) en CI antes de releases.
+- Drift between host projects and Basic++ -> downstream integration tests keyed to `basicpp` tags; maintain an `extern/basicpp.version` file.
+- Over-generalising -> keep scope focused on proven patterns.
+- Dependency management -> runtime stays header-only; ship the transpiler as a binary or package.
+- Generated C++ compilation -> validate against MSVC, clang, gcc, and Emscripten in CI before releases.

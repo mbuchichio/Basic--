@@ -5,19 +5,22 @@ Basic++ is a modern BASIC-flavoured language that transpiles to C++ (and, via yo
 This repository contains two pieces:
 
 - **Transpiler toolchain** (WIP): converts `.bpp` sources into clean C++ that you can feed to your regular compiler.
-- **Runtime library (`include/basicpp/…`)**: a lightweight, header-only standard library offering the core building blocks required by generated code (command dispatch, state machines, history helpers, etc.).
+- **Runtime library (`include/basicpp/...`)**: a lightweight, header-only standard library offering the core building blocks required by generated code (command dispatch, state machines, history helpers, etc.).
 
-La idea es ofrecer un BASIC moderno que emite C++ idiomático, con el objetivo de producir artefactos portables sin necesidad de escribir C++ a mano.
+The goal is to offer a modern BASIC that emits idiomatic C++, letting developers produce portable artefacts without writing C++ by hand.
 
 ## Current status
 
-- GitHub Actions ejecuta `cmake` + `ctest` en Ubuntu y Windows en cada push/PR.
+- Runtime layer bootstrap covering `basicpp::core`, `basicpp::command`, `basicpp::state`, `basicpp::history`, and `basicpp::testing`.
+- Minimal self-test harness with smoke tests to keep behaviour stable while the language front-end evolves.
+- CLI `bppc` accepts `transpile <file.bpp>` and currently dumps lexer tokens to aid parser development.
+- GitHub Actions runs `cmake` + `ctest` on Ubuntu and Windows for every push and pull request.
 
 Work in progress:
 
 1. Parser and AST for `.bpp` syntax.
 2. Code generator that lowers AST nodes into the runtime primitives.
-3. CLI transpiler pipeline (bpp → C++ → chosen compiler → binary/Wasm).
+3. CLI transpiler pipeline (bpp -> C++ -> chosen compiler -> binary/Wasm).
 4. Standalone build tooling so users can produce `.exe`/`.dll` artefacts without touching raw C++ toolchains manually.
 
 ## Building the runtime tests

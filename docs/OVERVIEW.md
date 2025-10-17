@@ -124,4 +124,4 @@ The transpiler emits transition tables and registry wiring using `basicpp::state
 4. Link the generated units with the runtime headers.
 5. Invoke the target compiler (native toolchain or `wasm32-unknown`) to produce binaries.
 
-Until steps 1–3 land, you can experiment directly with the runtime library and tests in this repository.
+Until steps 1-3 land, you can experiment directly with the runtime library and tests in this repository.
