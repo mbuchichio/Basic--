@@ -1,0 +1,12 @@
+# Build artifacts
+/build/
+/out/
+/*.user
+/*.suo
+CMakeCache.txt
+CMakeFiles/
+Testing/
+*.obj
+*.pdb
+*.exe
+*.log
