@@ -62,10 +62,20 @@ public:
                 continue;
             }
 
+            if (peek(token_kind::keyword_command)) {
+                advance();
+                auto command = parse_command_decl();
+                if (!command) {
+                    return core::result<ast::module_decl, std::string>::err(command.error());
+                }
+                module.commands.push_back(std::move(command.value()));
+                continue;
+            }
+
             return core::result<ast::module_decl, std::string>::err(unexpected_token_message());
         }
 
-        // Future work: parse additional declarations following states.
+        // Future work: parse additional declarations following commands.
 
         return core::result<ast::module_decl, std::string>::ok(std::move(module));
     }
@@ -85,6 +95,13 @@ private:
 
     bool peek(token_kind kind) const {
         return !is_at_end() && current().kind == kind;
+    }
+
+    bool peek_next(token_kind kind) const {
+        if (index_ + 1 >= tokens_.size()) {
+            return false;
+        }
+        return tokens_[index_ + 1].kind == kind;
     }
 
     void advance() {
@@ -156,6 +173,39 @@ private:
         return core::result<ast::const_decl, std::string>::ok(std::move(decl));
     }
 
+    core::result<ast::command_decl, std::string> parse_command_decl() {
+        auto name_token = consume(token_kind::identifier, "expected command name");
+        if (!name_token) {
+            return core::result<ast::command_decl, std::string>::err(name_token.error());
+        }
+
+        auto open_paren = consume(token_kind::l_paren, "expected '(' after command name");
+        if (!open_paren) {
+            return core::result<ast::command_decl, std::string>::err(open_paren.error());
+        }
+
+        auto parameters = parse_parameter_list();
+        if (!parameters) {
+            return core::result<ast::command_decl, std::string>::err(parameters.error());
+        }
+
+        auto close_paren = consume(token_kind::r_paren, "expected ')' after command parameters");
+        if (!close_paren) {
+            return core::result<ast::command_decl, std::string>::err(close_paren.error());
+        }
+
+        auto body = parse_command_body();
+        if (!body) {
+            return core::result<ast::command_decl, std::string>::err(body.error());
+        }
+
+        ast::command_decl decl{};
+        decl.name = name_token.value().lexeme;
+        decl.parameters = std::move(parameters.value());
+        decl.body_tokens = std::move(body.value());
+        return core::result<ast::command_decl, std::string>::ok(std::move(decl));
+    }
+
     core::result<ast::state_decl, std::string> parse_state_decl() {
         auto name_token = consume(token_kind::identifier, "expected state name");
         if (!name_token) {
@@ -212,6 +262,55 @@ private:
         transition.event = event_token.value().lexeme;
         transition.target_state = target_token.value().lexeme;
         return core::result<ast::state_transition, std::string>::ok(std::move(transition));
+    }
+
+    core::result<std::vector<std::string>, std::string> parse_parameter_list() {
+        std::vector<std::string> parameters;
+        if (peek(token_kind::r_paren)) {
+            return core::result<std::vector<std::string>, std::string>::ok(std::move(parameters));
+        }
+
+        while (true) {
+            auto param = consume(token_kind::identifier, "expected parameter name");
+            if (!param) {
+                return core::result<std::vector<std::string>, std::string>::err(param.error());
+            }
+            parameters.push_back(param.value().lexeme);
+
+            if (!match(token_kind::comma)) {
+                break;
+            }
+        }
+
+        return core::result<std::vector<std::string>, std::string>::ok(std::move(parameters));
+    }
+
+    core::result<std::vector<token>, std::string> parse_command_body() {
+        std::vector<token> body;
+
+        while (!is_at_end()) {
+            if (peek(token_kind::keyword_end) && peek_next(token_kind::keyword_command)) {
+                break;
+            }
+            body.push_back(current());
+            advance();
+        }
+
+        if (is_at_end()) {
+            return core::result<std::vector<token>, std::string>::err("expected 'end command' before end of input");
+        }
+
+        auto end_token = consume(token_kind::keyword_end, "expected 'end' to close command");
+        if (!end_token) {
+            return core::result<std::vector<token>, std::string>::err(end_token.error());
+        }
+
+        auto command_token = consume(token_kind::keyword_command, "expected 'command' after 'end'");
+        if (!command_token) {
+            return core::result<std::vector<token>, std::string>::err(command_token.error());
+        }
+
+        return core::result<std::vector<token>, std::string>::ok(std::move(body));
     }
 
     core::result<ast::literal, std::string> parse_literal() {

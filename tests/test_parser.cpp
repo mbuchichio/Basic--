@@ -138,6 +138,70 @@ BASICPP_TEST(ParserRejectsStateWithoutTransition) {
     }
 }
 
+BASICPP_TEST(ParserParsesCommandWithParameters) {
+    const std::string source =
+        "module App\n"
+        "command SayHello(name, context)\n"
+        "return\n"
+        "end command\n";
+
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (!module) {
+        throw std::runtime_error("parser failed");
+    }
+
+    const auto& commands = module.value().commands;
+    if (commands.size() != 1) {
+        throw std::runtime_error("unexpected command count");
+    }
+
+    if (commands[0].name != "SayHello") {
+        throw std::runtime_error("unexpected command name");
+    }
+
+    if (commands[0].parameters.size() != 2) {
+        throw std::runtime_error("unexpected parameter count");
+    }
+
+    if (commands[0].parameters[0] != "name" || commands[0].parameters[1] != "context") {
+        throw std::runtime_error("unexpected parameter names");
+    }
+
+    if (commands[0].body_tokens.empty()) {
+        throw std::runtime_error("expected command body tokens");
+    }
+
+    if (commands[0].body_tokens.front().kind != token_kind::keyword_return) {
+        throw std::runtime_error("unexpected first body token");
+    }
+}
+
+BASICPP_TEST(ParserRejectsCommandWithoutEnd) {
+    const std::string source =
+        "module App\n"
+        "command SayHello()\n"
+        "return\n";
+
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (module) {
+        throw std::runtime_error("parser should have failed");
+    }
+
+    if (module.error() != "expected 'end command' before end of input") {
+        throw std::runtime_error("unexpected parser error message");
+    }
+}
+
 BASICPP_TEST(ParserRejectsMissingModuleKeyword) {
     const std::string source = "function Main()\nend function\n";
     auto tokens = lexer::tokenize(source);

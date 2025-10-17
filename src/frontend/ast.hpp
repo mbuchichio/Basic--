@@ -28,6 +28,12 @@ struct state_decl {
     std::vector<state_transition> transitions;
 };
 
+struct command_decl {
+    std::string name;
+    std::vector<std::string> parameters;
+    std::vector<token> body_tokens;
+};
+
 struct import_decl {
     std::string path;
 };
@@ -37,6 +43,7 @@ struct module_decl {
     std::vector<import_decl> imports;
     std::vector<const_decl> constants;
     std::vector<state_decl> states;
+    std::vector<command_decl> commands;
 };
 
 } // namespace basicpp::frontend::ast
