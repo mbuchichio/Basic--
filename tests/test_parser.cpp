@@ -78,6 +78,66 @@ BASICPP_TEST(ParserRejectsConstMissingLiteral) {
     }
 }
 
+BASICPP_TEST(ParserParsesStateMachine) {
+    const std::string source =
+        "module App\n"
+        "state AppState = Idle\n"
+        "on Start => Running\n"
+        "on Stop => Idle\n";
+
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (!module) {
+        throw std::runtime_error("parser failed");
+    }
+
+    const auto& states = module.value().states;
+    if (states.size() != 1) {
+        throw std::runtime_error("unexpected state count");
+    }
+
+    if (states[0].name != "AppState") {
+        throw std::runtime_error("unexpected state name");
+    }
+
+    if (states[0].initial_state != "Idle") {
+        throw std::runtime_error("unexpected initial state");
+    }
+
+    if (states[0].transitions.size() != 2) {
+        throw std::runtime_error("unexpected transition count");
+    }
+
+    if (states[0].transitions[0].event != "Start" || states[0].transitions[0].target_state != "Running") {
+        throw std::runtime_error("unexpected first transition");
+    }
+
+    if (states[0].transitions[1].event != "Stop" || states[0].transitions[1].target_state != "Idle") {
+        throw std::runtime_error("unexpected second transition");
+    }
+}
+
+BASICPP_TEST(ParserRejectsStateWithoutTransition) {
+    const std::string source = "module App\nstate AppState = Idle\n";
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (module) {
+        throw std::runtime_error("parser should have failed");
+    }
+
+    if (module.error() != "state requires at least one 'on' transition") {
+        throw std::runtime_error("unexpected parser error message");
+    }
+}
+
 BASICPP_TEST(ParserRejectsMissingModuleKeyword) {
     const std::string source = "function Main()\nend function\n";
     auto tokens = lexer::tokenize(source);

@@ -52,10 +52,20 @@ public:
                 continue;
             }
 
+            if (peek(token_kind::keyword_state)) {
+                advance();
+                auto state = parse_state_decl();
+                if (!state) {
+                    return core::result<ast::module_decl, std::string>::err(state.error());
+                }
+                module.states.push_back(std::move(state.value()));
+                continue;
+            }
+
             return core::result<ast::module_decl, std::string>::err(unexpected_token_message());
         }
 
-        // Future work: parse additional declarations following constants.
+        // Future work: parse additional declarations following states.
 
         return core::result<ast::module_decl, std::string>::ok(std::move(module));
     }
@@ -144,6 +154,64 @@ private:
         decl.name = name_token.value().lexeme;
         decl.value = std::move(value.value());
         return core::result<ast::const_decl, std::string>::ok(std::move(decl));
+    }
+
+    core::result<ast::state_decl, std::string> parse_state_decl() {
+        auto name_token = consume(token_kind::identifier, "expected state name");
+        if (!name_token) {
+            return core::result<ast::state_decl, std::string>::err(name_token.error());
+        }
+
+        auto equals_token = consume(token_kind::assignment, "expected '=' after state name");
+        if (!equals_token) {
+            return core::result<ast::state_decl, std::string>::err(equals_token.error());
+        }
+
+        auto initial_token = consume(token_kind::identifier, "expected initial state identifier");
+        if (!initial_token) {
+            return core::result<ast::state_decl, std::string>::err(initial_token.error());
+        }
+
+        if (!peek(token_kind::keyword_on)) {
+            return core::result<ast::state_decl, std::string>::err("state requires at least one 'on' transition");
+        }
+
+        ast::state_decl decl{};
+        decl.name = name_token.value().lexeme;
+        decl.initial_state = initial_token.value().lexeme;
+
+        while (peek(token_kind::keyword_on)) {
+            advance(); // consume 'on'
+            auto transition = parse_state_transition();
+            if (!transition) {
+                return core::result<ast::state_decl, std::string>::err(transition.error());
+            }
+            decl.transitions.push_back(std::move(transition.value()));
+        }
+
+        return core::result<ast::state_decl, std::string>::ok(std::move(decl));
+    }
+
+    core::result<ast::state_transition, std::string> parse_state_transition() {
+        auto event_token = consume(token_kind::identifier, "expected event name after 'on'");
+        if (!event_token) {
+            return core::result<ast::state_transition, std::string>::err(event_token.error());
+        }
+
+        auto arrow_token = consume(token_kind::arrow, "expected '=>' after event name");
+        if (!arrow_token) {
+            return core::result<ast::state_transition, std::string>::err(arrow_token.error());
+        }
+
+        auto target_token = consume(token_kind::identifier, "expected target state after '=>'");
+        if (!target_token) {
+            return core::result<ast::state_transition, std::string>::err(target_token.error());
+        }
+
+        ast::state_transition transition{};
+        transition.event = event_token.value().lexeme;
+        transition.target_state = target_token.value().lexeme;
+        return core::result<ast::state_transition, std::string>::ok(std::move(transition));
     }
 
     core::result<ast::literal, std::string> parse_literal() {
