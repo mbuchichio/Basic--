@@ -116,6 +116,72 @@ end command
 
 The transpiler emits transition tables and registry wiring using `basicpp::state` and `basicpp::command` primitives.
 
+## Grammar (draft)
+
+The following EBNF-style grammar captures the subset we are targeting for the transpiler MVP. Newlines can be written as physical line breaks or semicolons. Indentation in the examples above is optional and serves readability only.
+
+```
+module            ::= "module" identifier EOL import_section? declaration_section?
+
+import_section    ::= import_decl+
+import_decl       ::= "import" dotted_identifier EOL
+
+declaration_section ::= declaration+
+declaration          ::= const_decl | state_decl | command_decl | function_decl
+
+const_decl        ::= "const" identifier "=" expression EOL
+
+state_decl        ::= "state" identifier "=" identifier EOL transition+
+transition        ::= "on" identifier "=>" identifier EOL
+
+command_decl      ::= "command" identifier parameter_list EOL block "end" "command" EOL
+
+function_decl     ::= "function" identifier parameter_list return_clause? EOL block "end" "function" EOL
+
+parameter_list    ::= "(" parameter_list_contents? ")"
+parameter_list_contents ::= parameter ("," parameter)*
+parameter         ::= identifier
+
+return_clause     ::= "as" type_spec
+
+block             ::= statement*
+
+statement         ::= assignment | if_stmt | while_stmt | for_stmt
+                    | command_call | return_stmt | expression_stmt
+
+assignment        ::= identifier "=" expression EOL
+if_stmt           ::= "if" expression "then" EOL block elseif_clause* else_clause? "end" "if" EOL
+elseif_clause     ::= "elseif" expression "then" EOL block
+else_clause       ::= "else" EOL block
+while_stmt        ::= "while" expression EOL block "end" "while" EOL
+for_stmt          ::= "for" identifier "in" range_expression EOL block "end" "for" EOL
+command_call      ::= "call" identifier argument_list EOL
+return_stmt       ::= "return" expression? EOL
+expression_stmt   ::= expression EOL
+
+argument_list     ::= "(" argument_list_contents? ")"
+argument_list_contents ::= expression ("," expression)*
+
+range_expression  ::= expression ".." expression
+
+expression        ::= equality
+equality          ::= comparison (("==" | "<>") comparison)*
+comparison        ::= term (("<" | "<=" | ">" | ">=") term)*
+term              ::= factor (("+" | "-") factor)*
+factor            ::= unary (("*" | "/") unary)*
+unary             ::= ("-" | "not") unary | primary
+primary           ::= literal | identifier | call_expression | "(" expression ")"
+
+call_expression   ::= identifier argument_list
+
+literal           ::= integer_literal | float_literal | string_literal | "true" | "false"
+
+dotted_identifier ::= identifier ("." identifier)*
+type_spec         ::= dotted_identifier
+```
+
+The grammar is intentionally conservative. As the parser grows we can add constructs (pattern matching, user-defined records, richer expressions) and update this section to mirror reality.
+
 ## Build pipeline (planned)
 
 1. Parse `.bpp` modules into an AST.

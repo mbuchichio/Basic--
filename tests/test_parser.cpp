@@ -5,11 +5,13 @@
 
 #include "frontend/lexer.hpp"
 #include "frontend/parser.hpp"
+#include "frontend/token.hpp"
 
 namespace {
 
 using basicpp::frontend::lexer;
 using basicpp::frontend::parser;
+using basicpp::frontend::token_kind;
 } // namespace
 
 BASICPP_TEST(ParserParsesModuleName) {
@@ -26,6 +28,53 @@ BASICPP_TEST(ParserParsesModuleName) {
 
     if (module.value().name != "App") {
         throw std::runtime_error("unexpected module name");
+    }
+}
+
+BASICPP_TEST(ParserParsesConstLiteral) {
+    const std::string source = "module App\nconst Version = \"0.1.0\"\n";
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (!module) {
+        throw std::runtime_error("parser failed");
+    }
+
+    const auto& constants = module.value().constants;
+    if (constants.size() != 1) {
+        throw std::runtime_error("unexpected constant count");
+    }
+
+    if (constants[0].name != "Version") {
+        throw std::runtime_error("unexpected constant name");
+    }
+
+    if (constants[0].value.kind != token_kind::string_literal) {
+        throw std::runtime_error("unexpected literal kind");
+    }
+
+    if (constants[0].value.lexeme != "0.1.0") {
+        throw std::runtime_error("unexpected literal value");
+    }
+}
+
+BASICPP_TEST(ParserRejectsConstMissingLiteral) {
+    const std::string source = "module App\nconst Version = \n";
+    auto tokens = lexer::tokenize(source);
+    if (!tokens) {
+        throw std::runtime_error("lexer failed");
+    }
+
+    auto module = parser::parse_module(tokens.value());
+    if (module) {
+        throw std::runtime_error("parser should have failed");
+    }
+
+    if (module.error().find("expected literal after '='") == std::string::npos) {
+        throw std::runtime_error("unexpected parser error message");
     }
 }
 
