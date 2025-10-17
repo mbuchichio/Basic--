@@ -7,7 +7,7 @@ This repository contains two pieces:
 - **Transpiler toolchain** (WIP): converts `.bpp` sources into clean C++ that you can feed to your regular compiler.
 - **Runtime library (`include/basicpp/…`)**: a lightweight, header-only standard library offering the core building blocks required by generated code (command dispatch, state machines, history helpers, etc.).
 
-Think "Xojo, but generating idiomatic C++"—the goal is to ship portable artefacts without ever touching C++ manually.
+La idea es ofrecer un BASIC moderno que emite C++ idiomático, con el objetivo de producir artefactos portables sin necesidad de escribir C++ a mano.
 
 ## Current status
 
