@@ -13,7 +13,7 @@ The goal is to offer a modern BASIC that emits idiomatic C++, letting developers
 
 - Runtime layer bootstrap covering `basicpp::core`, `basicpp::command`, `basicpp::state`, `basicpp::history`, and `basicpp::testing`.
 - Minimal self-test harness with smoke tests to keep behaviour stable while the language front-end evolves.
-- CLI `bppc` accepts `transpile <file.bpp>` and currently dumps lexer tokens to aid parser development.
+- CLI `bppc` accepts `transpile <file.bpp>` and currently parses the module header (pass `--tokens` to dump lexer output for debugging).
 - GitHub Actions runs `cmake` + `ctest` on Ubuntu and Windows for every push and pull request.
 
 Work in progress:

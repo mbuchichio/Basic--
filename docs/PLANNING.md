@@ -74,6 +74,7 @@ Current recommendation: start with a submodule; publish a package once the trans
 
 - [x] Define the token set and lexer stub (`token.hpp`, `lexer.hpp`/`.cpp`).
 - [x] Add lexer tests covering key tokens and common failure modes.
+- [x] Introduce a parser skeleton that recognises module declarations.
 - [ ] Define the basic grammar (`docs/OVERVIEW.md` <-> parser).
 - [ ] Implement lexer integration, parser, and AST under `src/`.
 - [ ] Generate C++ for the initial subset (const, command, state, function).
