@@ -1,11 +1,8 @@
-#include <fstream>
 #include <iostream>
-#include <iterator>
 #include <string>
 #include <vector>
 
-#include "frontend/lexer.hpp"
-#include "frontend/parser.hpp"
+#include "transpile.hpp"
 
 namespace {
 
@@ -33,76 +30,8 @@ void print_usage() {
     std::cout << "  build       Run full pipeline (transpile + compile)\n";
     std::cout << "  version     Display tool version\n";
     std::cout << "\nOptions for 'transpile':\n";
-    std::cout << "  --tokens    Dump lexer tokens after parsing\n";
-}
-
-int dump_tokens(const std::vector<basicpp::frontend::token>& tokens) {
-    for (const auto& tok : tokens) {
-        std::cout << tok.line << ':' << tok.column << "\t" << basicpp::frontend::to_string(tok.kind);
-        if (!tok.lexeme.empty()) {
-            std::cout << "\t" << tok.lexeme;
-        }
-        std::cout << '\n';
-    }
-    return 0;
-}
-
-int run_transpile(const std::vector<std::string>& params) {
-    if (params.empty()) {
-        std::cerr << "transpile requires an input file\n";
-        return 1;
-    }
-
-    std::string input_path;
-    bool show_tokens = false;
-
-    for (const auto& param : params) {
-        if (param == "--tokens") {
-            show_tokens = true;
-            continue;
-        }
-
-        if (input_path.empty()) {
-            input_path = param;
-            continue;
-        }
-
-        std::cerr << "unknown parameter: " << param << '\n';
-        return 1;
-    }
-
-    if (input_path.empty()) {
-        std::cerr << "transpile requires an input file\n";
-        return 1;
-    }
-
-    std::ifstream file(input_path, std::ios::binary);
-    if (!file) {
-        std::cerr << "failed to open " << input_path << '\n';
-        return 1;
-    }
-
-    std::string source((std::istreambuf_iterator<char>(file)), std::istreambuf_iterator<char>());
-
-    auto tokens_result = basicpp::frontend::lexer::tokenize(source);
-    if (!tokens_result) {
-        std::cerr << "lexer error: " << tokens_result.error() << '\n';
-        return 1;
-    }
-
-    auto module_result = basicpp::frontend::parser::parse_module(tokens_result.value());
-    if (!module_result) {
-        std::cerr << "parser error: " << module_result.error() << '\n';
-        return 1;
-    }
-
-    std::cout << "Parsed module: " << module_result.value().name << '\n';
-
-    if (show_tokens) {
-        return dump_tokens(tokens_result.value());
-    }
-
-    return 0;
+    std::cout << "  --tokens           Dump lexer tokens after parsing\n";
+    std::cout << "  --out <path>       Override output path (file or directory)\n";
 }
 
 int run_build(const std::vector<std::string>& params) {
@@ -125,7 +54,7 @@ int main(int argc, char** argv) {
     }
 
     if (args.subcommand == "transpile") {
-        return run_transpile(args.parameters);
+        return basicpp::cli::run_transpile(args.parameters);
     }
 
     if (args.subcommand == "build") {

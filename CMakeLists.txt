@@ -17,6 +17,8 @@ target_compile_definitions(basicpp INTERFACE BASICPP_VERSION="${PROJECT_VERSION}
 add_library(basicpp_frontend STATIC
     src/frontend/lexer.cpp
     src/frontend/parser.cpp
+    src/codegen/generator.cpp
+    src/cli/transpile.cpp
 )
 target_compile_features(basicpp_frontend PUBLIC cxx_std_20)
 target_link_libraries(basicpp_frontend PUBLIC basicpp)

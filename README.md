@@ -12,16 +12,15 @@ The goal is to offer a modern BASIC that emits idiomatic C++, letting developers
 ## Current status
 
 - Runtime layer bootstrap covering `basicpp::core`, `basicpp::command`, `basicpp::state`, `basicpp::history`, and `basicpp::testing`.
-- Minimal self-test harness with smoke tests to keep behaviour stable while the language front-end evolves.
-- CLI `bppc` accepts `transpile <file.bpp>` and currently parses the module header, imports, constants, state machines, command blocks, and function blocks (pass `--tokens` to dump lexer output for debugging).
+- Minimal self-test harness (see `tests/`) plus CLI integration coverage to keep behaviour stable while the language front-end evolves.
+- CLI `bppc` accepts `transpile <file.bpp>` and parses module headers, imports, constants, state machines, command blocks, and function blocks. It now writes the generated `.cpp` beside the input (override with `--out`) and can dump the lexer stream via `--tokens` for debugging.
 - GitHub Actions runs `cmake` + `ctest` on Ubuntu and Windows for every push and pull request.
 
 Work in progress:
 
-1. Parser and AST for `.bpp` syntax.
-2. Code generator that lowers AST nodes into the runtime primitives.
-3. CLI transpiler pipeline (bpp -> C++ -> chosen compiler -> binary/Wasm).
-4. Standalone build tooling so users can produce `.exe`/`.dll` artefacts without touching raw C++ toolchains manually.
+1. Lower command/function bodies to real runtime-backed C++ instead of stubbed TODOs.
+2. Flesh out the CLI “build” pipeline (bpp -> C++ -> compiler) and multi-file support.
+3. Package the runtime + CLI so downstream projects can depend on Basic++ without cloning this repository.
 
 ## Building the runtime tests
 

@@ -76,9 +76,9 @@ Current recommendation: start with a submodule; publish a package once the trans
 - [x] Add lexer tests covering key tokens and common failure modes.
 - [x] Introduce a parser skeleton that recognises module declarations.
 - [x] Define the basic grammar (`docs/OVERVIEW.md` <-> parser).
-- [ ] Implement lexer integration, parser, and AST under `src/`.
-- [ ] Generate C++ for the initial subset (const, command, state, function).
-- [ ] Extend `bppc` so it accepts `.bpp` and emits `.cpp` alongside the runtime.
+- [x] Implement lexer integration, parser, and AST under `src/`.
+- [x] Generate C++ for the initial subset (const, command, state, function).
+- [x] Extend `bppc` so it accepts `.bpp` and emits `.cpp` alongside the runtime.
 
 ### Sprint D - standalone experience (2-3 days)
 
@@ -86,6 +86,12 @@ Current recommendation: start with a submodule; publish a package once the trans
 - [ ] Autodetect common toolchains (MSVC, clang, gcc) and surface simplified flags (`--target wasm`, `--target native`).
 - [ ] Package runtime + CLI into platform-specific releases.
 - [ ] Ship project templates (`bppc init console`, `bppc init gui`) with preconfigured CMake for advanced users.
+
+### Next focus
+
+- Lower command/function bodies into real C++ statements wired to `basicpp` primitives (replace TODO stubs).
+- Design the `bppc build` pipeline: choose compiler detection strategy and outline artefact layout.
+- Add multi-file transpilation support and clarify how runtime headers are delivered to downstream projects.
 
 ## CI and versioning
 
